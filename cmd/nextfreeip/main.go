@@ -9,13 +9,20 @@ import (
 	"strings"
 )
 
+const pgmName string = "nextfreeip"
+const pgmVersion string = "1.0.0"
+const pgmURL string = "https://github.com/jftuga/nextfreeip"
+
 func usage(pgm string) {
 	fmt.Println()
-	fmt.Println("nextfreeip: Get the next consecutive IP address that is not found in DNS")
-	fmt.Println("https://github.com/jftuga/nextfreeip")
+	fmt.Printf("%s: Get the next consecutive IP address that is not found in DNS\n", pgmName)
+	fmt.Printf("version: %s\n", pgmVersion)
+	fmt.Println(pgmURL)
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Printf("%s [ ip-address ]\n", pgm)
+	fmt.Println()
+	fmt.Println("Note: The program stops searching after checking the `x.y.z.255` address.")
 	fmt.Println()
 }
 
