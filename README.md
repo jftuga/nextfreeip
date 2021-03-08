@@ -6,7 +6,8 @@ Find the next IP address that is not listed in DNS
 
 ```shell
 
-nextfreeip 192.168.1.1
+C:\> nextfreeip 192.168.1.1
+
 192.168.1.1      device1.example.com.
 192.168.1.2      device2.example.com.
 192.168.1.3      device3.example.com.
@@ -20,4 +21,4 @@ nextfreeip 192.168.1.1
 * The program stops searching after checking the `x.y.z.255` address.
 
 ## Download
-* Binaries for Windows, macOS and Linux can be found on the [releases](releases) page.
+* Binaries for Windows, macOS and Linux can be found on the [releases](https://github.com/jftuga/nextfreeip/releases) page.
