@@ -17,4 +17,7 @@ nextfreeip 192.168.1.1
 ```
 
 ## Notes
-* The program stops searching after it gets to the `.255` address.
+* The program stops searching after checking the `x.y.z.255` address.
+
+## Download
+* Binaries for Windows, macOS and Linux can be found on the [releases](releases) page.
