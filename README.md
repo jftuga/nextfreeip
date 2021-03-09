@@ -1,12 +1,12 @@
 # nextfreeip
-Find the next IP address that is not listed in DNS
+Find the next IP address that is not listed in DNS when given a CIDR address
 
 
 ## Usage
 
 ```shell
 
-C:\> nextfreeip 192.168.1.1
+C:\> nextfreeip 192.168.1.1/26
 
 192.168.1.1      device1.example.com.
 192.168.1.2      device2.example.com.
@@ -18,7 +18,7 @@ C:\> nextfreeip 192.168.1.1
 ```
 
 ## Notes
-* The program stops searching after checking the `x.y.z.255` address.
+* The program stops searching after checking the `x.y.z.255` address. It assumes a `/24` netmask when unspecified.
 
 ## Download
 * Binaries for Windows, macOS and Linux can be found on the [releases](https://github.com/jftuga/nextfreeip/releases) page.
