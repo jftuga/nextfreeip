@@ -1,6 +1,20 @@
+
+/*
+nextfreeip
+-John Taylor
+Mar 9 2021
+
+Get the next consecutive IP address that is not found in DNS when given a CIDR address
+
+Acknowledgments:
+https://stackoverflow.com/a/60542265/452281
+
+ */
+
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
@@ -10,7 +24,7 @@ import (
 )
 
 const pgmName string = "nextfreeip"
-const pgmVersion string = "1.0.0"
+const pgmVersion string = "1.1.0"
 const pgmURL string = "https://github.com/jftuga/nextfreeip"
 
 func usage(pgm string) {
@@ -20,12 +34,17 @@ func usage(pgm string) {
 	fmt.Println(pgmURL)
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Printf("%s [ ip-address ]\n", pgm)
+	fmt.Printf("%s [ cidr address ]\n", pgm)
+	fmt.Println()
+	fmt.Println("Example:")
+	fmt.Printf("%s 192.168.1.4/27\n", pgm)
 	fmt.Println()
 	fmt.Println("Note: The program stops searching after checking the `x.y.z.255` address.")
+	fmt.Println("      It assumes a /24 netmask when unspecified.")
 	fmt.Println()
 }
 
+// resolveIP - given a IP address, return the hostname
 func resolveIP(ip string) bool {
 	allNames, err := net.LookupAddr(ip)
 	if err != nil {
@@ -41,21 +60,25 @@ func resolveIP(ip string) bool {
 	return false
 }
 
-// getLastOctet - return the last octet of an IP in numeric format
-func getLastOctet(ip string) int {
-	slots := strings.Split(ip, ".")
-	last := slots[3]
-	i, err := strconv.Atoi(last)
-	if err != nil {
-		log.Fatalf("Unable to convert string value to int: %s\n%s\n", last, err)
+// addressToByte - convert IP address to a byte array representation
+func addressToByte(ip net.IP) []byte{
+	octets := strings.Split(ip.String(),".")
+	var b []byte
+	for _, n := range octets {
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			log.Fatalf("Invalid IP address: %s\n%s\n", ip, err)
+		}
+		b = append(b,byte(i))
 	}
-	return i
+	return b
 }
 
-// getTriplet - return the first 3 octets of and IP
-func getTriplet(ip string) string {
-	s := strings.Split(ip, ".")
-	return s[0] + "." + s[1] + "." + s[2]
+// intToAddress - convert a integer into an IP address
+func intToAddress(i uint32) net.IP {
+	ip := make(net.IP, 4)
+	binary.BigEndian.PutUint32(ip, i)
+	return ip
 }
 
 func main() {
@@ -64,20 +87,43 @@ func main() {
 		return
 	}
 
-	ip := os.Args[1]
-	triplet := getTriplet(ip)
-	last := getLastOctet(ip)
+	cidr := os.Args[1]
+	if !strings.Contains(cidr,"/") {
+		// default to /24 if no netmask is given
+		cidr += "/24"
+	}
 
-	found := false
-	i := 0
-	for i = last; i <= 255; i++ {
-		found = resolveIP(fmt.Sprintf("%s.%d", triplet, i))
+	ip, ipv4Net, err := net.ParseCIDR(cidr)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// given from command line
+	first := addressToByte(ip)
+	startIPv4Net := &net.IPNet{
+		IP:   first,
+		Mask: ipv4Net.Mask,
+	}
+
+	// convert starting IP to uint32
+	start := binary.BigEndian.Uint32(startIPv4Net.IP)
+	// convert IPNet struct mask and address to uint32
+	mask := binary.BigEndian.Uint32(ipv4Net.Mask)
+	// find the final address
+	finish := (start & mask) | (mask ^ 0xffffffff)
+
+	// perform a DNS lookup on each IP address until the end of the netmask
+	var i uint32
+	for i = start; i <= finish; i++ {
+		z := intToAddress(i).String()
+		found := resolveIP(z)
 		if !found {
-			fmt.Printf("%s.%d is not in DNS\n", triplet, i)
+			fmt.Println()
+			fmt.Println(z + " is not in DNS")
 			return
 		}
 	}
 
 	fmt.Println()
-	fmt.Printf("Stopped searching at: %s.%d\n", triplet, i-1)
+	fmt.Printf("Stopped searching at: %s\n", intToAddress(i-1))
 }
