@@ -24,7 +24,7 @@ import (
 )
 
 const pgmName string = "nextfreeip"
-const pgmVersion string = "1.1.0"
+const pgmVersion string = "1.1.1"
 const pgmURL string = "https://github.com/jftuga/nextfreeip"
 
 func usage(pgm string) {
@@ -98,6 +98,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	onBoundary := false
+	if net.IP.String(ipv4Net.IP) == net.IP.String(ip) {
+		onBoundary = true
+	}
+
 	// given from command line
 	first := addressToByte(ip)
 	startIPv4Net := &net.IPNet{
@@ -111,6 +116,11 @@ func main() {
 	mask := binary.BigEndian.Uint32(ipv4Net.Mask)
 	// find the final address
 	finish := (start & mask) | (mask ^ 0xffffffff)
+
+	if onBoundary {
+		start += 1
+		fmt.Printf("%s\t%s\n", ip, "SKIPPED - Network Boundary")
+	}
 
 	// perform a DNS lookup on each IP address until the end of the netmask
 	var i uint32
